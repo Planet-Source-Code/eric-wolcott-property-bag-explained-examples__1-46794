@@ -1,0 +1,147 @@
+---------------------------------------------
+Property Bag Tutorial
+---------------------------------------------
+1.) ABOUT PROPERTY BAG
+	Property bag can be considered to be a kind of bag. 
+	It can be used to hold items that are placed there by a user.
+	These items consist of a "Label" and a Value.
+	When you wish to extract an item from the bag you call upon the label to find it.
+	The Value can consist of a picture, string, or even binary.
+	Once the bag has been filled it can be written to another file that when executed
+	or called to do so will ready the item of your choice.
+	Also the values pulled out of the Property Bag may be assigned to a picture, 
+	textbox, caption, or even put into the binary of a file.
+
+2.) USES OF THE PROPERTY BAG
+	a.) Create A File Archive Of Some Type
+	b.) Create A DLL Type File
+	c.) Hold Program Informaion
+	d.) Create An Editable EXE File
+	e.) Others....
+
+3.) CREATING AND FILLING THE PROPERTY BAG
+	To physicaly create the property bag you must DIM a variable as a 
+	"New PropertyBag" (Dim PropBag As New PropertyBag).
+	To write to the property bag just type 
+	<Label Of New Property Bag>.WriteProperty <Label>, <Value>
+	(PropBag.WriteProperty "Text1", Text1.text).
+	Now you have created the Property Bag, Next is to add the Property Bag to a file.
+	First you must DIM a variable as Long (Dim BeginPos As Long), this variable will 
+	hold the information that the put the property bag at the end of the Files binary.
+	Nest you must DIM a variable as a Variant (Dim varTemp As Variant) to hold the 
+	Property Bag's Code. After that you should open the file of your choice "For Binary"
+	(Open App.Path & "Project1.exe" For Binary As #1). With the Long Variable you created
+	put the Legnth Of The File in it (BeginPos = LOF(1)). Next Add the Property Bag's Code
+	To the Variant you created (varTemp = PropBag.Contents). In order to put the property 
+	bag as the last part of the file you must find the end of the file (Seek #1, LOF(1)).
+	Once found you must put the Property Bag's code in the files binary (Put #1, , varTemp).
+        The Place the legnth of the orginal file as the last part of the code (Put #1, , BeginPos).
+	Then close the file (Close #1).
+SAMPLE CODE
+        Dim PropBag As New PropertyBag
+	Dim BeginPos As Long
+        Dim varTemp As Variant
+        PropBag.WriteProperty "Text1", Text1.text
+        Open App.Path & "\Project1.exe" For Binary As #1
+        BeginPos = LOF(1)
+        varTemp = PropBag.Contents
+        Seek #1, LOF(1)
+        Put #1, , varTemp
+        Put #1, , BeginPos
+        Close #1
+
+
+4.) READING PROPERTY BAG
+	To read the property bag in a file you must DIM a variable as a New PropertyBag,
+	this will act as an emptybag that will be filled with the code later read in the file.
+	To read the code in the file you must open the file for Binary 
+	(Open App.Path & "\Project1.exe" For Binary As #1). Next you have to seek the data that
+	tells you where to code for the property bag starts (Get #1, LOF(1) - 3, BeginPos).
+	Dim another variable as Long to hold the information about where the Property Bag starts
+	(Dim BeginPos As Long). Place the information found in the code into the variable 
+	(Get #1, LOF(1) - 3, BeginPos). Then Find the position of the Property Bag's Code
+	(Seek #1, BeginPos). Next DIM a Variable as a Variant to hold the Property Bag's code 
+	once extracted from the file (Dim VarTemp As Variant). Next place the code in the variable
+	(Get #1, , VarTemp). Once found DIM a variable as a Byte (Dim ByteArr() As Byte ) and add 
+	the numbers of Bytes the the variable (ByteArr = VarTemp). Next add the code to the New 
+	PropertyBag variable (PropBag.Contents = ByteArr). Next write the Legnth of The File to the
+	Property Bag (PropBag.WriteProperty "LOF", LOF(1)) then write the start position of the 
+	Property Bag's code into the Property Bag (PropBag.WriteProperty "BeginPos", BeginPos).
+	Last clode the open file (Close #1). To Read a variable from the Property Bag to a 
+	variable just use <Variable> = <New PropertyBag Variable>.ReadProperty(<Label>) 
+	eg.(Text5.Text = PropBag.ReadProperty("Text1"))
+
+SAMPLE CODE
+	Dim PropBag As New PropertyBag
+	Dim VarTemp As Variant
+	Dim BeginPos As Long
+	Dim ByteArr() As Byte        
+	Open App.Path & "\Project1.exe" For Binary As #1
+        Get #1, LOF(1) - 3, BeginPos
+        Seek #1, BeginPos
+        Get #1, , VarTemp
+        ByteArr = VarTemp
+        PropBag.Contents = ByteArr
+        PropBag.WriteProperty "LOF", LOF(1)
+        PropBag.WriteProperty "BeginPos", BeginPos
+        Close #1
+        Text5.Text = PropBag.ReadProperty("Text1")
+
+5.) OTHER THINGS
+	READ PROPBAG IN SELF------------------------------------------------------------	
+
+	When creating a Property Bag you can place the code into a file created in VB.
+	Before you do so put this code in that VB file:
+	
+	Sub Form_OnLoad
+	Dim PropBag As New PropertyBag
+	Dim VarTemp As Variant
+	Dim BeginPos As Long
+	Dim ByteArr() As Byte        
+	Open App.Path & "\" & App.ExeName & ".exe" For Binary As #1
+        Get #1, LOF(1) - 3, BeginPos
+        Seek #1, BeginPos
+        Get #1, , VarTemp
+        ByteArr = VarTemp
+        PropBag.Contents = ByteArr
+        PropBag.WriteProperty "LOF", LOF(1)
+        PropBag.WriteProperty "BeginPos", BeginPos
+        Close #1
+        Me.Caption = PropBag.ReadProperty("Text1")
+	End Sub
+
+	If you do so, after you write the Property Bag to that VB file, when you run it the
+	program will read the Property Bag in itself and change it's caption to whatever you 
+	have it set for.
+
+	READ/WRITE PICTURES------------------------------------------------------------
+
+	You may also add pictures to a Property Bag like this:
+	When you writting to a Property Bag use this - 
+		PropBag.WriteProperty "Picture1", Picture1.Picture
+	Abd when you read from the Property Bag use this -
+		Picture5.Picture = LoadPicture(PropBag.ReadProperty("Picture1"))
+
+	WRITE BINARY------------------------------------------------------------
+	
+	To add the binary of a file to the Property Bag use - 
+	
+	Open App.Path & "\Temp\Temp.Dat" For Binary As #1 	'Opens File To Read
+        filedata$ = String(LOF(1), " ") 			'Selects All Of Binary
+        Get #1, , filedata$ 					'Sets Binary To Variable
+        Close #1 						'Closes File
+	PropBag.WriteProperty "File", filedata$ 		'Puts Binary In Property Bag
+
+	To extract the binary and creat a file out of it use - 
+
+	File$ = PropBag.ReadProperty("File") 			'Reads Binary From Property Bag
+        Open App.Path & "\Temp.Dat" For Output As #1 		'Creats an Empty File
+        Close #1
+        Open App.Path & "\Temp.Dat" For Binary As #1 		'Opens Empty File To Write To
+        Put #1, , File$						'Puts Binary In Empty File
+        Close #1 						'Closes File
+
+-------------------------------------------------------------------------
+Created By Szafran - ew16301@yahoo.com Please E-Mail If Any Questions
+July 10, 2003
+-------------------------------------------------------------------------
